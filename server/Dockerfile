@@ -1,24 +1,36 @@
-FROM jboss/base-jdk:8
+FROM tpires/alpine-openjdk:8
 
 ENV KEYCLOAK_VERSION 1.9.8.Final
 # Enables signals getting passed from startup script to JVM
 # ensuring clean shutdown when container is stopped.
 ENV LAUNCH_JBOSS_IN_BACKGROUND 1
+ENV DEPS="jq curl unzip"
 
 USER root
 
-RUN yum install -y epel-release && yum install -y jq && yum clean all
+RUN apk update \
+    && apk add $DEPS \
+    && rm /var/cache/apk/*
+RUN mkdir -p /usr/share/java/saxon
+RUN curl -L -o /usr/share/java/saxon/saxon.zip http://downloads.sourceforge.net/project/saxon/Saxon-HE/9.6/SaxonHE9-6-0-7J.zip \
+    && unzip /usr/share/java/saxon/saxon.zip -d /usr/share/java/saxon \
+    && rm -rf /usr/share/java/saxon/noticies /usr/share/java/saxon/doc \
+      /usr/share/java/saxon/saxon9-test.jar /usr/share/java/saxon/saxon9-unpack.jar /usr/share/java/saxon/saxon.zip \
+    && ln -s /usr/share/java/saxon/saxon9he.jar /usr/share/java/saxon.jar
 
 USER jboss
 
-RUN cd /opt/jboss/ && curl -L https://downloads.jboss.org/keycloak/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz | tar zx && mv /opt/jboss/keycloak-$KEYCLOAK_VERSION /opt/jboss/keycloak
-
-ADD docker-entrypoint.sh /opt/jboss/
-
-ADD setLogLevel.xsl /opt/jboss/keycloak/
-RUN java -jar /usr/share/java/saxon.jar -s:/opt/jboss/keycloak/standalone/configuration/standalone.xml -xsl:/opt/jboss/keycloak/setLogLevel.xsl -o:/opt/jboss/keycloak/standalone/configuration/standalone.xml
+ADD docker-entrypoint.sh /tmp/
+ADD setLogLevel.xsl /tmp/
 
 ENV JBOSS_HOME /opt/jboss/keycloak
+
+RUN cd /opt/jboss/ \
+    && curl -L https://downloads.jboss.org/keycloak/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz | tar zx \
+    && mv /opt/jboss/keycloak-$KEYCLOAK_VERSION /opt/jboss/keycloak
+RUN ln -s /tmp/docker-entrypoint.sh /opt/jboss/ \
+    && ln -s /tmp/setLogLevel.xsl /opt/jboss/keycloak/ \
+    && java -jar /usr/share/java/saxon.jar -s:/opt/jboss/keycloak/standalone/configuration/standalone.xml -xsl:/opt/jboss/keycloak/setLogLevel.xsl -o:/opt/jboss/keycloak/standalone/configuration/standalone.xml
 
 EXPOSE 8080
 
