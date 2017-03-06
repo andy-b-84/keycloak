@@ -20,20 +20,21 @@ RUN curl -L -o /usr/share/java/saxon/saxon.zip http://downloads.sourceforge.net/
 
 USER jboss
 
-ADD docker-entrypoint.sh /tmp/
-ADD setLogLevel.xsl /tmp/
-
 ENV JBOSS_HOME /opt/jboss/keycloak
 
 RUN cd /opt/jboss/ \
     && curl -L https://downloads.jboss.org/keycloak/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz | tar zx \
     && mv /opt/jboss/keycloak-$KEYCLOAK_VERSION /opt/jboss/keycloak
-RUN ln -s /tmp/docker-entrypoint.sh /opt/jboss/ \
-    && ln -s /tmp/setLogLevel.xsl /opt/jboss/keycloak/ \
-    && java -jar /usr/share/java/saxon.jar -s:/opt/jboss/keycloak/standalone/configuration/standalone.xml -xsl:/opt/jboss/keycloak/setLogLevel.xsl -o:/opt/jboss/keycloak/standalone/configuration/standalone.xml
+
+ADD docker-entrypoint.sh /opt/jboss/docker-entrypoint.sh
+ADD setLogLevel.xsl /opt/jboss/keycloak/setLogLevel.xsl
+
+RUN java -jar /usr/share/java/saxon.jar -s:/opt/jboss/keycloak/standalone/configuration/standalone.xml -xsl:/opt/jboss/keycloak/setLogLevel.xsl -o:/opt/jboss/keycloak/standalone/configuration/standalone.xml
 
 EXPOSE 8080
 
 ENTRYPOINT [ "/opt/jboss/docker-entrypoint.sh" ]
-
 CMD ["-b", "0.0.0.0"]
+
+#ENTRYPOINT ["watch"]
+#CMD ["ps", "-ef"]
