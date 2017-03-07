@@ -1,0 +1,28 @@
+version: '2'
+services:
+  postgres:
+    image: postgres:9.6
+    environment:
+      - POSTGRES_DATABASE=keycloak
+      - POSTGRES_USER=keycloak
+      - POSTGRES_PASSWORD=keycloak
+      - POSTGRES_ROOT_PASSWORD=k3ycl0ak
+    expose:
+      - 5432
+    volumes:
+      - ~/workspace/docker/postgresql/data:/var/lib/postgresql/data
+  keycloak:
+    image: plaxton/keycloak-postgres-alpine:1.9.8.Final
+    depends_on:
+      - "postgres"
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
+      - POSTGRES_DATABASE=keycloak
+      - POSTGRES_USER=keycloak
+      - POSTGRES_PASSWORD=keycloak
+      - POSTGRES_PORT_5432_TCP_ADDR=postgres
+    links:
+      - postgres:postgres
+    ports:
+      - 10000:8080
