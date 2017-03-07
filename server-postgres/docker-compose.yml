@@ -12,7 +12,7 @@ services:
     volumes:
       - ~/workspace/docker/postgresql/data:/var/lib/postgresql/data
   keycloak:
-    image: plaxton/keycloak-postgres-alpine:1.9.8.Final
+    image: plaxton/keycloak-postgres-alpine:2.5.4.Final
     depends_on:
       - "postgres"
     environment:
