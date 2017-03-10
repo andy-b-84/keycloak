@@ -6,4 +6,4 @@ done
 
 echo PostgreSQL has bound its port
 
-/opt/jboss/docker-entrypoint.sh -b 0.0.0.0
+exec /opt/jboss/docker-entrypoint.sh -b 0.0.0.0
